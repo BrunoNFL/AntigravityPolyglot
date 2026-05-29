@@ -1,15 +1,15 @@
 ---
-name: gemini-polyglot
-description: "Compatibility layer for AI agents (Cursor, Claude, Copilot, Codex). Enables Gemini CLI to natively interpret, translate, and bridge foreign rules, tool calls, and subagent syntax. ALWAYS use this skill to check if currently activated skills or project files follow non-Gemini agent patterns."
+name: antigravity-polyglot
+description: "Compatibility layer for AI agents (Cursor, Claude, Copilot, Codex) in the Antigravity orchestration system. Enables Antigravity to natively interpret, translate, and bridge foreign rules, tool calls, and subagent syntax. ALWAYS use this skill to check if currently activated skills or project files follow non-Gemini/non-Antigravity agent patterns."
 ---
 
-# GeminiPolyglot
+# AntigravityPolyglot
 
-This skill enables Gemini CLI to natively interpret, parse, and execute instructions and tool calls designed for other AI agents. It acts as a "Universal Adapter" for the AI engineering ecosystem.
+This skill enables the Antigravity orchestration system to natively interpret, parse, and execute instructions and tool calls designed for other AI agents. It acts as a "Universal Adapter" for the AI engineering ecosystem.
 
 ## Workflow
 
-When this skill is activated, Gemini CLI MUST perform the following checks:
+When this skill is activated, Antigravity MUST perform the following checks:
 
 ### 1. Agent Logic Detection (Proactive Check)
 For every activated skill in the current session (see `available_skills`), evaluate if it originates from or targets another agent:
@@ -17,6 +17,7 @@ For every activated skill in the current session (see `available_skills`), evalu
 - **GitHub Copilot Pattern:** Look for YAML frontmatter with `applyTo` or `.github/skills/` paths.
 - **Cursor Pattern:** Look for `.cursorrules` or `.mdc` references in descriptions.
 - **Codex Pattern:** Look for system-prompt style instructions or JSON function schemas.
+
 
 ### 2. Global Memory Persistence
 If a "foreign agent pattern" is detected in a skill or the workspace, you MUST use the `save_memory` tool to persist this discovery:
@@ -30,23 +31,23 @@ Apply discovered rules to the current context using this priority:
 
 ### 4. Command & Subagent Translation
 - **Commands:** Map Claude CLI commands (e.g., `/compact`) using `scripts/claude_compat.sh`.
-- **Subagents:** Map "spawn subagent" calls to Gemini's native subagents (`generalist`, `codebase_investigator`, or `ui-designer`) using `references/claude-mappings.md`.
+- **Subagents:** Map "spawn subagent" calls to Antigravity's native subagents (`self` or `research`) using `references/claude-mappings.md`.
 
 ## Lifecycle Management & Uninstallation
 
-Gemini CLI is aware of how to manage this skill's lifecycle.
+Antigravity is aware of how to manage this skill's lifecycle.
 
 ### Uninstallation
 If the user requests to uninstall this skill, you should:
 1.  Explain that the skill can be uninstalled globally or from the workspace.
 2.  Propose to run the uninstallation command for them.
-3.  Execute the uninstallation via `run_shell_command` using the `--uninstall-global` or `--uninstall-workspace` flags.
+3.  Execute the uninstallation via `run_command` using the `--uninstall-global` or `--uninstall-workspace` flags.
 
 **Example uninstallation commands:**
-- Global: `gemini-polyglot --uninstall-global`
-- Workspace: `gemini-polyglot --uninstall-workspace`
+- Global: `antigravity-polyglot --uninstall-global`
+- Workspace: `antigravity-polyglot --uninstall-workspace`
 
-Note: If the `gemini-polyglot` binary is not in the path, use the local script: `./scripts/setup.sh --uninstall-workspace`.
+Note: If the `antigravity-polyglot` binary is not in the path, use the local script: `./scripts/setup.sh --uninstall-workspace`.
 
 ## Reference Guides
 
