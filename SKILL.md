@@ -11,12 +11,17 @@ This skill enables the Antigravity orchestration system to natively interpret, p
 
 When this skill is activated, Antigravity MUST perform the following checks:
 
-### 1. Agent Logic Detection (Proactive Check)
-As the absolute first action in any session, you MUST deterministically detect the presence of foreign agent configurations by running the pattern detection script:
+### 0. Memory Cache Check (Highest Priority)
+Before running any script or scanning files, inspect your active session and recalled memory:
+- If a persistent fact regarding this project's agent signature already exists (e.g., `fact="This project uses Cursor rules; I must apply references/cursor-mappings.md"` or `fact="This workspace has been scanned and is Gemini native"`), **BYPASS the scanning script entirely**. 
+- Immediately load and apply the mappings indicated in your memory.
+
+### 1. Agent Logic Detection (Cache Miss Flow)
+If NO scan record exists in your memory for this workspace, you MUST run the local pattern detection script to scan the codebase:
 ```bash
 python3 ~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py "<workspace_path>"
 ```
-Analyze the returned JSON report and immediately activate the corresponding mapping logic:
+Analyze the returned JSON report, activate the corresponding mapping logic, and **proceed to Step 2 to save these findings to memory**:
 - **If `claude.detected` is true:** Translate Claude Code calls and commands. See [references/claude-mappings.md](references/claude-mappings.md) for tool/subagent/command translation.
 - **If `copilot.detected` is true:** Translate GitHub Copilot skills and instructions. See [references/copilot-mappings.md](references/copilot-mappings.md) for multi-agent and tool translation.
 - **If `cursor.detected` is true:** Translate Cursor rules and modular `.mdc` files. See [references/cursor-mappings.md](references/cursor-mappings.md) for rule and glob translation.
@@ -24,15 +29,10 @@ Analyze the returned JSON report and immediately activate the corresponding mapp
 - **If `gemini_cli.detected` is true:** Translate baseline Gemini CLI configurations. See [references/gemini-mappings.md](references/gemini-mappings.md) for baseline tool and subagent routing.
 - **Foreign Tool Schema Pattern (Highest Priority):** Proactively scan the active tool definitions, JSON schemas, or Zod parameters inside all loaded skills during initialization. If any foreign tool schemas are detected, immediately map their parameter properties and register them into Antigravity's active tool list so they are fully visible to the orchestrator *before* any command or task execution begins.
 
-
-
-
-
-
-### 2. Global Memory Persistence
-If a "foreign agent pattern" is detected in a skill or the workspace, you MUST use the `save_memory` tool to persist this discovery:
-- **Project Scope:** If the pattern is specific to the current repo (e.g., `.cursorrules`).
-- **Global Scope:** If the pattern is tied to a specific global skill (e.g., a shared Claude MCP skill).
+### 2. Global Memory Persistence (Cache Write)
+If you ran the scan in Step 1, you MUST immediately write the findings to memory to cache them for all subsequent turns in this session:
+- **For Foreign Signatures:** `save_memory(scope="project", fact="This project uses [Platform] rules; I must apply mapping logic from references/[platform]-mappings.md.")`
+- **For Clean Workspace:** `save_memory(scope="project", fact="This project is clean and Gemini/Antigravity native; no foreign mapping is needed.")`
 - **Fact Example:** `save_memory(scope="project", fact="This project uses Cursor rules; I must apply the mapping logic from references/cursor-mappings.md.")`
 
 ### 3. Rule Ingestion & Merging
