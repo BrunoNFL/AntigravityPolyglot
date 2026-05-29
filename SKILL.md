@@ -39,9 +39,11 @@ If you ran the scan in Step 1, you MUST immediately write the findings to memory
 Apply discovered rules to the current context using this priority:
 `Gemini > Claude > Codex > Cursor`.
 
-### 4. Command & Subagent Translation
-- **Commands:** Map Claude CLI commands (e.g., `/compact`) using `scripts/claude_compat.sh`.
-- **Subagents:** Map "spawn subagent" calls to Antigravity's native subagents (`self` or `research`) using `references/claude-mappings.md`.
+### 4. Command & Subagent Translation (Upgraded)
+- **Commands:** Map foreign CLI commands (e.g., Claude's `/compact`) using the compatibility emulator (`scripts/claude_compat.sh`).
+- **Standard Subagents:** Map "spawn subagent" calls to Antigravity's native subagents (`self`, `research`, or `ui-designer`) using the respective platform guides under `references/*.md` (e.g., `references/claude-mappings.md`, `references/copilot-mappings.md`, `references/gemini-mappings.md`, `references/codex-mappings.md`).
+- **Dynamic Subagents (Highest Priority):** If a foreign skill attempts to spawn or call a custom subagent defined within itself (e.g., a skill-specific helper with its own prompts or parameters), you MUST dynamically synthesize it on-the-fly via the **`define_subagent`** tool and run it via **`invoke_subagent`**, proxying communication back and forth asynchronously in the background.
+
 
 ### 5. Foreign Tool Schema Ingestion & Registration (Critical)
 To prevent foreign skills from declaring "invisible" tools that the orchestrator fails to read or parse:
