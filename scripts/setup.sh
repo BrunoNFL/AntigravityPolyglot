@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Gemini CLI GeminiPolyglot: Interactive Lifecycle Manager (Final)
-# This script provides a modern, interactive TUI for managing GeminiPolyglot.
+# Antigravity AntigravityPolyglot: Interactive Lifecycle Manager
+# This script provides a modern, interactive TUI for managing AntigravityPolyglot.
 
 # --- Colors & UI Elements ---
 BOLD='\033[1m'
 CYAN='\033[36m'
 GREEN='\033[32m'
 RED='\033[31m'
-YELLOW='\033[33m'
+YELLOW='\033[33'
 DIM='\033[2m'
 NC='\033[0m' # No Color
 HIDE_CURSOR='\033[?25l'
@@ -16,22 +16,12 @@ SHOW_CURSOR='\033[?25h'
 
 # ASCII Art Logo (Clean & Complete)
 LOGO="${CYAN}
-   ______               _       _ ____        濒           __     __
-  / ____/___  ____ ___ (_)___  (_) __ \____  / /_  ______ _/ /___  / /_
- / / __/ _ \/ __ \`__ \/ / __ \/ / /_/ / __ \/ / / / / __ \`/ / __ \/ __/
-/ /_/ /  __/ / / / / / / / / / / ____/ /_/ / / /_/ / /_/ / / /_/ / /_
-\____/\___/_/ /_/ /_/_/_/ /_/_/_/    \____/_/\__, /\__, /_/\____/\__/
-                                            /____//____/
-${NC}"
-
-# Re-defining LOGO without weird chars manually just in case
-LOGO="${CYAN}
-   ____               _       _ ____        _             _       _
-  / ___| ___ _ __ ___(_)_ __ (_|  _ \ ___ | |_   _  __ _| | ___ | |_
- | |  _ / _ \ '_ \` _ \ | '_ \| | |_) / _ \| | | | |/ _\` | |/ _ \| __|
- | |_| |  __/ | | | | | | | | | |  __/ (_) | | |_| | (_| | | (_) | |_
-  \____|\___|_| |_| |_|_|_| |_|_|_|   \___/|_|\__, |\__, |_|\___/ \__|
-                                                |___/ |___/
+   ___          _   _                      _ _         ____       _             _       _
+  / _ \   _ __ | |_(_) __ _ _ __ __ ___   (_) |_ _   _|  _ \  ___ | | ___   ___ | | ___ | |_
+ / /_\ \ | '_ \| __| |/ _\` | '__/ _\` \ \ / / | __| | | | |_) |/ _ \| |/ _ \ / _ \| |/ _ \| __|
+/ /   \ \| | | | |_| | (_| | | | (_| |\ V /| | |_| |_| |  __/| (_) | | (_) | (_) | | (_) | |_
+\/     \/\_| |_|\__|_|\__, |_|  \__,_| \_/ |_|\__|\__, |_|    \___/|_|\___/ \___/|_|\___/ \__|
+                      |___/                      |___/
 ${NC}"
 
 BANNER="$LOGO
@@ -39,11 +29,15 @@ ${DIM}          The multilingual bridge for AI agents.${NC}
 ─────────────────────────────────────────────────────────────
 "
 
-GLOBAL_GEMINI_MD="$HOME/.gemini/gemini.md"
-WORKSPACE_GEMINI_MD="./gemini.md"
-BIN_DEST="/usr/local/bin/gemini-polyglot"
-INTEGRATION_MARKER="## GeminiPolyglot Integration"
-INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini agent patterns are detected, you MUST immediately activate the 'gemini-polyglot' skill to ensure correct mapping and execution."
+GLOBAL_GEMINI_MD="$HOME/.gemini/GEMINI.md"
+[ ! -f "$GLOBAL_GEMINI_MD" ] && [ -f "$HOME/.gemini/gemini.md" ] && GLOBAL_GEMINI_MD="$HOME/.gemini/gemini.md"
+
+WORKSPACE_GEMINI_MD="./GEMINI.md"
+[ ! -f "$WORKSPACE_GEMINI_MD" ] && [ -f "./gemini.md" ] && WORKSPACE_GEMINI_MD="./gemini.md"
+
+BIN_DEST="/usr/local/bin/antigravity-polyglot"
+INTEGRATION_MARKER="## AntigravityPolyglot Integration"
+INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini/non-Antigravity agent patterns are detected, you MUST immediately activate the 'antigravity-polyglot' skill to ensure correct mapping and execution."
 
 # --- Helper Logic ---
 
@@ -73,8 +67,7 @@ print_summary() {
 
 exit_prompt() {
     echo -e "\n${CYAN}─────────────────────────────────────────────────────────────${NC}"
-    echo -e "${BOLD}Press any key to exit GeminiPolyglot Manager...${NC}"
-    # Use a simpler read for wider compatibility
+    echo -e "${BOLD}Press any key to exit AntigravityPolyglot Manager...${NC}"
     read -n 1 -s
     echo ""
     exit 0
@@ -87,11 +80,11 @@ do_install() {
     local summary=()
     
     # Locate the .skill file relative to the resolved script directory
-    SKILL_FILE="$SCRIPT_REAL_DIR/../dist/gemini-polyglot.skill"
+    SKILL_FILE="$SCRIPT_REAL_DIR/../dist/antigravity-polyglot.skill"
     
     if [ ! -f "$SKILL_FILE" ]; then
         # Fallback for development/manual runs
-        SKILL_FILE="./dist/gemini-polyglot.skill"
+        SKILL_FILE="./dist/antigravity-polyglot.skill"
     fi
     
     if [ ! -f "$SKILL_FILE" ]; then
@@ -127,7 +120,7 @@ do_install() {
                 ln -sf "$(realpath "$0")" "$BIN_DEST"
                 summary+=("${GREEN}✅ CLI Binary Linked to PATH${NC}")
             else
-                summary+=("${YELLOW}💡 Manual link needed: sudo gemini-polyglot --install-bin${NC}")
+                summary+=("${YELLOW}💡 Manual link needed: sudo ln -sf $(realpath "$0") $BIN_DEST${NC}")
             fi
         else
             summary+=("${YELLOW}➖ CLI Binary already linked (Skipped)${NC}")
@@ -136,8 +129,8 @@ do_install() {
 
     clear
     echo -e "$BANNER"
-    print_summary "Installation" "✨ All set! Gemini now speaks every AI language." "${summary[@]}"
-    echo -e "\n${BOLD}Please reload your Gemini session to enable the polyglot capabilities.${NC}"
+    print_summary "Installation" "✨ All set! Antigravity now speaks every AI language." "${summary[@]}"
+    echo -e "\n${BOLD}Please reload your Antigravity session to enable the polyglot capabilities.${NC}"
     exit_prompt
 }
 
@@ -148,12 +141,12 @@ do_uninstall() {
     echo -e "${CYAN}🧹 Initializing uninstallation ($SCOPE)...${NC}"
 
     # 1. Detect Homebrew
-    if brew list gemini-polyglot &>/dev/null; then
+    if brew list antigravity-polyglot &>/dev/null; then
         IS_BREW=true
     fi
 
     # 2. Uninstall Skill
-    if echo "y" | gemini skills uninstall gemini-polyglot --scope "$SCOPE" > /dev/null 2>&1; then
+    if echo "y" | gemini skills uninstall antigravity-polyglot --scope "$SCOPE" > /dev/null 2>&1; then
         summary+=("${GREEN}✅ Skill Package Removed${NC}")
     else
         summary+=("${YELLOW}➖ Skill not found (Skipped)${NC}")
@@ -170,7 +163,6 @@ do_uninstall() {
     # 4. Remove Binary (Global only)
     if [ "$SCOPE" == "user" ] || [ "$SCOPE" == "global" ]; then
         if [ -f "$BIN_DEST" ]; then
-            # If Homebrew owns it, we don't manually remove it here, brew uninstall will handle it
             if [ "$IS_BREW" = false ]; then
                 if [ -w "$BIN_DEST" ]; then
                     rm "$BIN_DEST"
@@ -184,20 +176,19 @@ do_uninstall() {
 
     clear
     echo -e "$BANNER"
-    print_summary "Uninstallation" "🗑️ GeminiPolyglot has been successfully cleaned up." "${summary[@]}"
+    print_summary "Uninstallation" "🗑️ AntigravityPolyglot has been successfully cleaned up." "${summary[@]}"
     
     if [ "$IS_BREW" = true ]; then
         echo -e "\n${CYAN}Homebrew installation detected. Triggering Homebrew uninstallation...${NC}"
         
-        if brew uninstall gemini-polyglot; then
+        if brew uninstall antigravity-polyglot; then
             echo -e "${GREEN}✅ Homebrew uninstallation succeeded.${NC}"
             
-            # Check if this was the only formula in the tap
             REMAINING=$(brew formulae --tap BrunoNFL/taps 2>/dev/null | wc -l | xargs)
             if [ "$REMAINING" -eq 0 ]; then
                 echo -e "${DIM}No other formulae found in BrunoNFL/taps. Untapping...${NC}"
                 brew untap BrunoNFL/taps > /dev/null 2>&1
-                echo -e "${GREEN}✅ Untapped BrunoNFL/taps (it was the only formula).${NC}"
+                echo -e "${GREEN}✅ Untapped BrunoNFL/taps.${NC}"
             fi
         else
             echo -e "${RED}❌ Homebrew uninstallation failed.${NC}"
@@ -236,7 +227,6 @@ select_option() {
         echo -e "\n${DIM}─────────────────────────────────────────────────────────────${NC}"
         echo -e "${DIM}Use [↑/↓] to navigate, [Enter] to select${NC}"
         
-        # Robust escape sequence reader
         read -rsn1 key
         if [[ $key == $'\x1b' ]]; then
             read -rsn2 key
@@ -263,13 +253,13 @@ if [ "$1" != "" ]; then
         "--uninstall-global") do_uninstall "user" ;;
         "--install-workspace") do_install "workspace" ;;
         "--uninstall-workspace") do_uninstall "workspace" ;;
-        *) echo "Usage: gemini-polyglot [--install-global|--uninstall-global|--install-workspace|--uninstall-workspace]" ;;
+        *) echo "Usage: antigravity-polyglot [--install-global|--uninstall-global|--install-workspace|--uninstall-workspace]" ;;
     esac
     exit 0
 fi
 
 while true; do
-    select_option "What would you like to do?" "Install GeminiPolyglot" "Uninstall GeminiPolyglot" "Exit"
+    select_option "What would you like to do?" "Install AntigravityPolyglot" "Uninstall AntigravityPolyglot" "Exit"
     
     case "$SELECTED_INDEX" in
         0) # Install
@@ -281,7 +271,7 @@ while true; do
             ;;
         1) # Uninstall Detection
             IS_GLOBAL=false; IS_WORKSPACE=false
-            gemini skills list 2>/dev/null | grep -q "gemini-polyglot" && [ -f "$GLOBAL_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$GLOBAL_GEMINI_MD" && IS_GLOBAL=true
+            gemini skills list 2>/dev/null | grep -q "antigravity-polyglot" && [ -f "$GLOBAL_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$GLOBAL_GEMINI_MD" && IS_GLOBAL=true
             [ -f "$WORKSPACE_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$WORKSPACE_GEMINI_MD" && IS_WORKSPACE=true
             
             if [ "$IS_GLOBAL" = true ] && [ "$IS_WORKSPACE" = true ]; then
