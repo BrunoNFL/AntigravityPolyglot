@@ -17,6 +17,8 @@ For every activated skill in the current session (see `available_skills`), evalu
 - **GitHub Copilot Pattern:** Look for YAML frontmatter with `applyTo` or `.github/skills/` paths.
 - **Cursor Pattern:** Look for `.cursorrules` or `.mdc` references in descriptions.
 - **Codex Pattern:** Look for system-prompt style instructions or JSON function schemas.
+- **Foreign Tool Schema Pattern (Highest Priority):** Proactively scan the active tool definitions, JSON schemas, or Zod parameters inside all loaded skills during initialization. If any foreign tool schemas are detected, immediately map their parameter properties and register them into Antigravity's active tool list so they are fully visible to the orchestrator *before* any command or task execution begins.
+
 
 
 ### 2. Global Memory Persistence
