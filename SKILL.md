@@ -74,5 +74,6 @@ Note: If the `antigravity-polyglot` binary is not in the path, use the local scr
 - **Gemini Mappings:** See [references/gemini-mappings.md](references/gemini-mappings.md) for baseline Gemini CLI tool and subagent routing.
 
 ## Subfolder Workaround
-If you need to access resources in a global skill's subfolder (which Gemini CLI cannot read natively), use the `scripts/local_context_sync.sh` to copy them to the local workspace context (`./.gemini/`).
+If you need to access resources in a global skill's subfolder (which Antigravity cannot read natively), use the `scripts/local_context_sync.sh` to copy them to the local workspace context (`./.gemini/`).
+
 
