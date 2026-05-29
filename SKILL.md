@@ -33,6 +33,12 @@ Apply discovered rules to the current context using this priority:
 - **Commands:** Map Claude CLI commands (e.g., `/compact`) using `scripts/claude_compat.sh`.
 - **Subagents:** Map "spawn subagent" calls to Antigravity's native subagents (`self` or `research`) using `references/claude-mappings.md`.
 
+### 5. Foreign Tool Schema Ingestion & Registration (Critical)
+To prevent foreign skills from declaring "invisible" tools that the orchestrator fails to read or parse:
+- Proactively scan the active tool definitions, JSON schemas, or Zod parameters inside all loaded skills. 
+- If any foreign tool schemas are detected (e.g., standard Claude Code or Copilot tool schemas), you MUST dynamically translate their input parameters and register them as active, callable Antigravity tools.
+- When an active skill or script attempts to invoke a foreign tool call, intercept it in real-time, translate the argument payloads (e.g., mapping `command` ➔ `CommandLine`, `file_path` ➔ `TargetFile`), and execute it using Antigravity's native high-performance tools (`run_command`, `view_file`, `write_to_file`, `replace_file_content`).
+
 ## Lifecycle Management & Uninstallation
 
 Antigravity is aware of how to manage this skill's lifecycle.
