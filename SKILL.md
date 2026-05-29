@@ -12,13 +12,18 @@ This skill enables the Antigravity orchestration system to natively interpret, p
 When this skill is activated, Antigravity MUST perform the following checks:
 
 ### 1. Agent Logic Detection (Proactive Check)
-For every activated skill in the current session (see `available_skills`), evaluate if it originates from or targets another agent:
-- **Claude Code Pattern:** Look for `mcp__` prefixes in tools, TypeScript `tool()` definitions, or mentions of "Model Context Protocol". **See [references/claude-mappings.md](references/claude-mappings.md) for tool/subagent/command translation.**
-- **GitHub Copilot Pattern:** Look for YAML frontmatter with `applyTo` or `.github/skills/` paths. **See [references/copilot-mappings.md](references/copilot-mappings.md) for multi-agent and tool translation.**
-- **Cursor Pattern:** Look for `.cursorrules` or `.mdc` references in descriptions. **See [references/cursor-mappings.md](references/cursor-mappings.md) for rule and glob translation.**
-- **Codex Pattern:** Look for system-prompt style instructions or JSON function schemas. **See [references/codex-mappings.md](references/codex-mappings.md) for prompt and action translation.**
-- **Baseline Gemini CLI Pattern:** Look for standard lowercase `gemini.md` configurations. **See [references/gemini-mappings.md](references/gemini-mappings.md) for baseline tool and subagent routing.**
+As the absolute first action in any session, you MUST deterministically detect the presence of foreign agent configurations by running the pattern detection script:
+```bash
+python3 ~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py "<workspace_path>"
+```
+Analyze the returned JSON report and immediately activate the corresponding mapping logic:
+- **If `claude.detected` is true:** Translate Claude Code calls and commands. See [references/claude-mappings.md](references/claude-mappings.md) for tool/subagent/command translation.
+- **If `copilot.detected` is true:** Translate GitHub Copilot skills and instructions. See [references/copilot-mappings.md](references/copilot-mappings.md) for multi-agent and tool translation.
+- **If `cursor.detected` is true:** Translate Cursor rules and modular `.mdc` files. See [references/cursor-mappings.md](references/cursor-mappings.md) for rule and glob translation.
+- **If `codex.detected` is true:** Translate ChatGPT Codex custom rules and prompt rules. See [references/codex-mappings.md](references/codex-mappings.md) for prompt and action translation.
+- **If `gemini_cli.detected` is true:** Translate baseline Gemini CLI configurations. See [references/gemini-mappings.md](references/gemini-mappings.md) for baseline tool and subagent routing.
 - **Foreign Tool Schema Pattern (Highest Priority):** Proactively scan the active tool definitions, JSON schemas, or Zod parameters inside all loaded skills during initialization. If any foreign tool schemas are detected, immediately map their parameter properties and register them into Antigravity's active tool list so they are fully visible to the orchestrator *before* any command or task execution begins.
+
 
 
 
