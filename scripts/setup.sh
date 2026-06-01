@@ -37,7 +37,7 @@ WORKSPACE_GEMINI_MD="./GEMINI.md"
 
 BIN_DEST="/usr/local/bin/antigravity-polyglot"
 INTEGRATION_MARKER="## AntigravityPolyglot Integration"
-INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini/non-Antigravity agent patterns are detected, you MUST immediately activate the 'antigravity-polyglot' skill to ensure correct mapping and execution."
+INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini/non-Antigravity agent patterns are detected, you MUST immediately delegate to the 'antigravity-polyglot' subagent to translate schemas and rules, keeping your active context clean."
 
 # --- Helper Logic ---
 
@@ -71,6 +71,57 @@ exit_prompt() {
     read -n 1 -s
     echo ""
     exit 0
+}
+
+write_subagent_files() {
+    local dest_dir=$1
+    mkdir -p "$dest_dir"
+    
+    # 1. Write agent.json
+    cat << 'EOF' > "$dest_dir/agent.json"
+{
+  "name": "antigravity-polyglot",
+  "displayName": "Antigravity Polyglot",
+  "description": "Compatibility layer for AI agents. Ingests foreign rules and tools, translating them to Antigravity-native equivalents.",
+  "slashCommand": "/polyglot",
+  "hidden": false,
+  "customAgentSpec": {
+    "customAgent": {
+      "systemPromptSections": [
+        {
+          "title": "Instructions",
+          "content": "You are 'antigravity-polyglot', a specialized subagent designed to act as a Universal Adapter. Your sole job is to translate foreign agent configurations (Claude Code, Cursor, Copilot, Codex) and tool schemas into highly-optimized, Antigravity-native equivalents. Map their parameters to native Antigravity APIs (run_command, view_file, write_to_file, replace_file_content, ask_question) and deliver only a clean 'Active Constraint Card' (under 150 tokens) to the main orchestrator, keeping its context window completely clean."
+        }
+      ]
+    }
+  }
+}
+EOF
+
+    # 2. Write antigravity-polyglot.md
+    cat << 'EOF' > "$dest_dir/antigravity-polyglot.md"
+# AntigravityPolyglot: Subagent Mapping instructions
+
+You are the `antigravity-polyglot` subagent. Your job is to translate foreign rules and tool schemas into Antigravity-native mappings.
+
+## Core Directives
+1. **Constraint Card Output:** Read the target file path and user request. Filter rules from `.cursorrules`, `.mdc`, or `.github` instructions to include ONLY rules matching the target file. Compress them into a 150-token Markdown block.
+2. **Tool Parameter Mapping:**
+   - Claude `ReadFile` / `Read` ➔ `view_file` (using `AbsolutePath`)
+   - Claude `WriteFile` / `Write` ➔ `write_to_file` (using `TargetFile` & `CodeContent`)
+   - Claude `Bash` / `RunCommand` ➔ `run_command` (using `CommandLine`)
+   - Claude `FileEdit` / `Replace` ➔ `replace_file_content` (surgical contiguous)
+   - Claude `AskUserQuestion` ➔ `ask_question`
+   - Cursor `Edit File` / `Patch` ➔ `replace_file_content`
+   - Cursor `Create File` ➔ `write_to_file`
+   - Cursor `Read Context` ➔ `view_file`
+   - Copilot `run_shell` ➔ `run_command`
+   - Codex `create_file` ➔ `write_to_file`
+3. **Subagent Routing:**
+   - Route `codebase_investigator` or `Analyze Codebase` ➔ `research` (Native read-only)
+   - Route `generalist` or execution intents ➔ `self`
+   - Route `ui-designer` ➔ `ui-designer` (Dynamic designer)
+EOF
 }
 
 # --- Core Logic Functions ---
@@ -113,7 +164,7 @@ do_install() {
         summary+=("${YELLOW}➖ Integration already exists (Skipped)${NC}")
     fi
     
-    # 3. Dynamic Hook Registration
+    # 3. Dynamic Hook & Subagent Registration
     if [ "$SCOPE" == "user" ]; then
         # Option B: Global CLI Hook registration
         if [ ! -f "$BIN_DEST" ]; then
@@ -127,6 +178,10 @@ do_install() {
             summary+=("${YELLOW}➖ CLI Binary already linked (Skipped)${NC}")
         fi
         
+        # Scaffold global subagent
+        write_subagent_files "$HOME/.gemini/agents/antigravity-polyglot"
+        summary+=("${GREEN}✅ Global Subagent Registered in ~/.gemini/agents/${NC}")
+        
         # Register global pre-execution hook
         if gemini hooks register --event pre-execution --command "python3 $HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py \"\$PWD\"" > /dev/null 2>&1; then
             summary+=("${GREEN}✅ Global Pre-Execution Hook Registered${NC}")
@@ -134,7 +189,7 @@ do_install() {
             summary+=("${YELLOW}➖ Global Hook registration not supported (Skipped)${NC}")
         fi
     else
-        # Option C: Local Workspace Shell Hook Interceptor
+        # Option C: Local Workspace Shell Hook Interceptor & Workspace Subagent
         LOCAL_HOOK_DIR="./.agents/hooks"
         LOCAL_HOOK_FILE="$LOCAL_HOOK_DIR/pre-exec.sh"
         mkdir -p "$LOCAL_HOOK_DIR"
@@ -150,6 +205,10 @@ fi
 EOF
         chmod +x "$LOCAL_HOOK_FILE"
         summary+=("${GREEN}✅ Workspace Pre-Execution Hook Written to .agents/hooks/${NC}")
+        
+        # Scaffold workspace subagent
+        write_subagent_files "./.agents/agents/antigravity-polyglot"
+        summary+=("${GREEN}✅ Workspace Subagent Registered in .agents/agents/${NC}")
     fi
 
     clear
@@ -185,7 +244,7 @@ do_uninstall() {
         summary+=("${GREEN}✅ Linguistic Integration Removed${NC}")
     fi
     
-    # 4. Remove Binary & Hooks
+    # 4. Remove Binary & Hooks & Subagents
     if [ "$SCOPE" == "user" ] || [ "$SCOPE" == "global" ]; then
         if [ -f "$BIN_DEST" ]; then
             if [ "$IS_BREW" = false ]; then
@@ -196,6 +255,12 @@ do_uninstall() {
             else
                 summary+=("${DIM}➖ Binary managed by Homebrew (Deferred)${NC}")
             fi
+        fi
+        
+        # Remove global subagent
+        if [ -d "$HOME/.gemini/agents/antigravity-polyglot" ]; then
+            rm -rf "$HOME/.gemini/agents/antigravity-polyglot"
+            summary+=("${GREEN}✅ Global Subagent Files Removed${NC}")
         fi
         
         # Unregister global pre-execution hook
@@ -213,6 +278,12 @@ do_uninstall() {
         # Remove local hook directory if empty
         if [ -d "./.agents/hooks" ] && [ -z "$(ls -A ./.agents/hooks 2>/dev/null)" ]; then
             rmdir "./.agents/hooks"
+        fi
+        
+        # Remove workspace subagent
+        if [ -d "./.agents/agents/antigravity-polyglot" ]; then
+            rm -rf "./.agents/agents/antigravity-polyglot"
+            summary+=("${GREEN}✅ Workspace Subagent Files Removed${NC}")
         fi
     fi
 
