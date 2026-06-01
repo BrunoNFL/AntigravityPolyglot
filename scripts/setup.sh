@@ -37,7 +37,7 @@ WORKSPACE_GEMINI_MD="./GEMINI.md"
 
 BIN_DEST="/usr/local/bin/antigravity-polyglot"
 INTEGRATION_MARKER="## AntigravityPolyglot Integration"
-INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini/non-Antigravity agent patterns are detected, you MUST immediately delegate to the 'antigravity-polyglot' subagent to translate schemas and rules, keeping your active context clean."
+INTEGRATION_PROMPT="- Proactively check every activated skill and user request for foreign agent signatures (Claude MCP mcp__, Codex JSON tools, Cursor .cursorrules, or unknown tool calls). If any non-Gemini/non-Antigravity agent patterns are detected, you MUST immediately invoke the 'antigravity-polyglot' subagent using the invoke_subagent tool (with TypeName=\"antigravity-polyglot\", Role=\"Linguistic Adapter\", and a Prompt instructing it to translate the detected rules/schemas). The subagent will return a highly condensed 'Active Constraint Card' to integrate into your context, keeping your active session clean."
 
 # --- Helper Logic ---
 
