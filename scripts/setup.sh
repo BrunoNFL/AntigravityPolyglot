@@ -77,51 +77,16 @@ write_subagent_files() {
     local dest_dir=$1
     mkdir -p "$dest_dir"
     
-    # 1. Write agent.json
-    cat << 'EOF' > "$dest_dir/agent.json"
-{
-  "name": "antigravity-polyglot",
-  "displayName": "Antigravity Polyglot",
-  "description": "Compatibility layer for AI agents. Ingests foreign rules and tools, translating them to Antigravity-native equivalents.",
-  "slashCommand": "/polyglot",
-  "hidden": false,
-  "customAgentSpec": {
-    "customAgent": {
-      "systemPromptSections": [
-        {
-          "title": "Instructions",
-          "content": "You are 'antigravity-polyglot', a specialized subagent designed to act as a Universal Adapter. Your sole job is to translate foreign agent configurations (Claude Code, Cursor, Copilot, Codex) and tool schemas into highly-optimized, Antigravity-native equivalents. Map their parameters to native Antigravity APIs (run_command, view_file, write_to_file, replace_file_content, ask_question) and deliver only a clean 'Active Constraint Card' (under 150 tokens) to the main orchestrator, keeping its context window completely clean."
-        }
-      ]
-    }
-  }
-}
-EOF
-
-    # 2. Write antigravity-polyglot.md
-    cat << 'EOF' > "$dest_dir/antigravity-polyglot.md"
-# AntigravityPolyglot: Subagent Mapping instructions
-
-You are the `antigravity-polyglot` subagent. Your job is to translate foreign rules and tool schemas into Antigravity-native mappings.
-
-## Core Directives
-1. **Constraint Card Output:** Read the target file path and user request. Filter rules from `.cursorrules`, `.mdc`, or `.github` instructions to include ONLY rules matching the target file. Compress them into a 150-token Markdown block.
-2. **Tool Parameter Mapping:**
-   - Claude `ReadFile` / `Read` ➔ `view_file` (using `AbsolutePath`)
-   - Claude `WriteFile` / `Write` ➔ `write_to_file` (using `TargetFile` & `CodeContent`)
-   - Claude `Bash` / `RunCommand` ➔ `run_command` (using `CommandLine`)
-   - Claude `FileEdit` / `Replace` ➔ `replace_file_content` (surgical contiguous)
-   - Claude `AskUserQuestion` ➔ `ask_question`
-   - Cursor `Edit File` / `Patch` ➔ `replace_file_content`
-   - Cursor `Create File` ➔ `write_to_file`
-   - Cursor `Read Context` ➔ `view_file`
-   - Copilot `run_shell` ➔ `run_command`
-   - Codex `create_file` ➔ `write_to_file`
-3. **Subagent Routing:**
-   - Route `codebase_investigator` or `Analyze Codebase` ➔ `research` (Native read-only)
-   - Route `generalist` or execution intents ➔ `self`
-   - Route `ui-designer` ➔ `ui-designer` (Dynamic designer)
-EOF
+    # Clean copy from the package's resolved agents template folder
+    local src_dir="$SCRIPT_REAL_DIR/../agents/antigravity-polyglot"
+    
+    if [ -d "$src_dir" ]; then
+        cp "$src_dir/agent.json" "$dest_dir/agent.json"
+        cp "$src_dir/antigravity-polyglot.md" "$dest_dir/antigravity-polyglot.md"
+    else
+        echo -e "${RED}❌ Error: Subagent template directory not found at $src_dir${NC}"
+        return 1
+    fi
 }
 
 # --- Core Logic Functions ---
@@ -178,9 +143,12 @@ do_install() {
             summary+=("${YELLOW}➖ CLI Binary already linked (Skipped)${NC}")
         fi
         
-        # Scaffold global subagent
-        write_subagent_files "$HOME/.gemini/agents/antigravity-polyglot"
-        summary+=("${GREEN}✅ Global Subagent Registered in ~/.gemini/agents/${NC}")
+        # Scaffold global subagent by copying templates
+        if write_subagent_files "$HOME/.gemini/agents/antigravity-polyglot"; then
+            summary+=("${GREEN}✅ Global Subagent Registered in ~/.gemini/agents/${NC}")
+        else
+            summary+=("${RED}❌ Global Subagent Files Failed to Copy${NC}")
+        fi
         
         # Register global pre-execution hook
         if gemini hooks register --event pre-execution --command "python3 $HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py \"\$PWD\"" > /dev/null 2>&1; then
@@ -206,9 +174,12 @@ EOF
         chmod +x "$LOCAL_HOOK_FILE"
         summary+=("${GREEN}✅ Workspace Pre-Execution Hook Written to .agents/hooks/${NC}")
         
-        # Scaffold workspace subagent
-        write_subagent_files "./.agents/agents/antigravity-polyglot"
-        summary+=("${GREEN}✅ Workspace Subagent Registered in .agents/agents/${NC}")
+        # Scaffold workspace subagent by copying templates
+        if write_subagent_files "./.agents/agents/antigravity-polyglot"; then
+            summary+=("${GREEN}✅ Workspace Subagent Registered in .agents/agents/${NC}")
+        else
+            summary+=("${RED}❌ Workspace Subagent Files Failed to Copy${NC}")
+        fi
     fi
 
     clear
