@@ -85,7 +85,7 @@ write_subagent_files() {
         cp "$src_dir/antigravity-polyglot.md" "$dest_dir/antigravity-polyglot.md"
     else
         echo -e "${RED}❌ Error: Subagent template directory not found at $src_dir${NC}"
-        return 1
+        exit_prompt
     fi
 }
 
@@ -105,8 +105,9 @@ do_install() {
     
     if [ ! -f "$SKILL_FILE" ]; then
         echo -e "${RED}❌ Error: .skill file not found at $SKILL_FILE${NC}"
-        return 1
+        exit_prompt
     fi
+
 
     echo -e "${CYAN}🚀 Initializing installation ($SCOPE)...${NC}"
     
