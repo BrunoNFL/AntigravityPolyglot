@@ -151,11 +151,50 @@ do_install() {
             summary+=("${RED}❌ Global Subagent Files Failed to Copy${NC}")
         fi
         
-        # Register global pre-execution hook
-        if gemini hooks register --event pre-execution --command "python3 $HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py \"\$PWD\"" > /dev/null 2>&1; then
+        # Register global pre-execution hook natively in settings.json
+        if python3 -c '
+import json, os, sys
+settings_path = os.path.expanduser("~/.gemini/settings.json")
+try:
+    if os.path.exists(settings_path):
+        with open(settings_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    else:
+        data = {}
+except Exception:
+    sys.exit(1)
+hooks = data.setdefault("hooks", {})
+before_tool = hooks.setdefault("BeforeTool", [])
+hook_exists = False
+for entry in before_tool:
+    if entry.get("matcher") == "*":
+        for hk in entry.get("hooks", []):
+            if hk.get("name") == "antigravity-polyglot":
+                hook_exists = True
+                break
+if not hook_exists:
+    new_hook = {
+        "name": "antigravity-polyglot",
+        "type": "command",
+        "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
+    }
+    appended = False
+    for entry in before_tool:
+        if entry.get("matcher") == "*":
+            entry.setdefault("hooks", []).append(new_hook)
+            appended = True
+            break
+    if not appended:
+        before_tool.append({"matcher": "*", "hooks": [new_hook]})
+try:
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+except Exception:
+    sys.exit(1)
+' > /dev/null 2>&1; then
             summary+=("${GREEN}✅ Global Pre-Execution Hook Registered${NC}")
         else
-            summary+=("${YELLOW}➖ Global Hook registration not supported (Skipped)${NC}")
+            summary+=("${RED}❌ Global Hook registration failed${NC}")
         fi
     else
         # Option C: Local Workspace Shell Hook Interceptor & Workspace Subagent
@@ -235,9 +274,37 @@ do_uninstall() {
             summary+=("${GREEN}✅ Global Subagent Files Removed${NC}")
         fi
         
-        # Unregister global pre-execution hook
-        if gemini hooks unregister --event pre-execution > /dev/null 2>&1; then
+        # Unregister global pre-execution hook from settings.json
+        if python3 -c '
+import json, os, sys
+settings_path = os.path.expanduser("~/.gemini/settings.json")
+if not os.path.exists(settings_path):
+    sys.exit(0)
+try:
+    with open(settings_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    sys.exit(1)
+if "hooks" in data and "BeforeTool" in data["hooks"]:
+    before_tool = data["hooks"]["BeforeTool"]
+    updated_before_tool = []
+    for entry in before_tool:
+        if "hooks" in entry:
+            entry["hooks"] = [hk for hk in entry["hooks"] if hk.get("name") != "antigravity-polyglot"]
+            if entry["hooks"]:
+                updated_before_tool.append(entry)
+        else:
+            updated_before_tool.append(entry)
+    data["hooks"]["BeforeTool"] = updated_before_tool
+try:
+    with open(settings_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+except Exception:
+    sys.exit(1)
+' > /dev/null 2>&1; then
             summary+=("${GREEN}✅ Global Pre-Execution Hook Unregistered${NC}")
+        else
+            summary+=("${RED}❌ Global Hook unregistration failed${NC}")
         fi
     else
         # Remove workspace hook
