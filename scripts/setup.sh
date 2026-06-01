@@ -151,43 +151,49 @@ do_install() {
             summary+=("${RED}❌ Global Subagent Files Failed to Copy${NC}")
         fi
         
-        # Register global pre-execution hook natively in settings.json
+        # Register global pre-execution hook natively in hooks.json
         if python3 -c '
 import json, os, sys
-settings_path = os.path.expanduser("~/.gemini/settings.json")
+hooks_path = os.path.expanduser("~/.gemini/config/hooks.json")
 try:
-    if os.path.exists(settings_path):
-        with open(settings_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+    if os.path.exists(hooks_path):
+        with open(hooks_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            data = json.loads(content) if content else {}
     else:
         data = {}
 except Exception:
     sys.exit(1)
-hooks = data.setdefault("hooks", {})
-before_tool = hooks.setdefault("BeforeTool", [])
+polyglot_hook = data.setdefault("antigravity-polyglot", {})
+pre_tool_use = polyglot_hook.setdefault("PreToolUse", [])
 hook_exists = False
-for entry in before_tool:
+for entry in pre_tool_use:
     if entry.get("matcher") == "*":
         for hk in entry.get("hooks", []):
-            if hk.get("name") == "antigravity-polyglot":
+            if hk.get("type") == "command" and "detect_patterns.py" in hk.get("command", ""):
                 hook_exists = True
                 break
 if not hook_exists:
     new_hook = {
-        "name": "antigravity-polyglot",
-        "type": "command",
-        "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
+        "matcher": "*",
+        "hooks": [
+            {
+                "type": "command",
+                "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
+            }
+        ]
     }
     appended = False
-    for entry in before_tool:
+    for entry in pre_tool_use:
         if entry.get("matcher") == "*":
-            entry.setdefault("hooks", []).append(new_hook)
+            entry.setdefault("hooks", []).append(new_hook["hooks"][0])
             appended = True
             break
     if not appended:
-        before_tool.append({"matcher": "*", "hooks": [new_hook]})
+        pre_tool_use.append(new_hook)
 try:
-    with open(settings_path, "w", encoding="utf-8") as f:
+    os.makedirs(os.path.dirname(hooks_path), exist_ok=True)
+    with open(hooks_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 except Exception:
     sys.exit(1)
@@ -274,30 +280,22 @@ do_uninstall() {
             summary+=("${GREEN}✅ Global Subagent Files Removed${NC}")
         fi
         
-        # Unregister global pre-execution hook from settings.json
+        # Unregister global pre-execution hook from hooks.json
         if python3 -c '
 import json, os, sys
-settings_path = os.path.expanduser("~/.gemini/settings.json")
-if not os.path.exists(settings_path):
+hooks_path = os.path.expanduser("~/.gemini/config/hooks.json")
+if not os.path.exists(hooks_path):
     sys.exit(0)
 try:
-    with open(settings_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    with open(hooks_path, "r", encoding="utf-8") as f:
+        content = f.read().strip()
+        data = json.loads(content) if content else {}
 except Exception:
     sys.exit(1)
-if "hooks" in data and "BeforeTool" in data["hooks"]:
-    before_tool = data["hooks"]["BeforeTool"]
-    updated_before_tool = []
-    for entry in before_tool:
-        if "hooks" in entry:
-            entry["hooks"] = [hk for hk in entry["hooks"] if hk.get("name") != "antigravity-polyglot"]
-            if entry["hooks"]:
-                updated_before_tool.append(entry)
-        else:
-            updated_before_tool.append(entry)
-    data["hooks"]["BeforeTool"] = updated_before_tool
+if "antigravity-polyglot" in data:
+    del data["antigravity-polyglot"]
 try:
-    with open(settings_path, "w", encoding="utf-8") as f:
+    with open(hooks_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
 except Exception:
     sys.exit(1)
