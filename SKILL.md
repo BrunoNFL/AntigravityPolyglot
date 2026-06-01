@@ -12,33 +12,27 @@ This skill acts as a lightweight, high-speed **Zero-Overhead Interface Intercept
 When this skill is activated, Antigravity MUST execute the following caching and discovery pipeline:
 
 ### 0. Memory Cache Check (Highest Priority)
-Before running any script or scanning files, inspect your active session and recalled memory:
-- If a persistent fact regarding this project's agent signature already exists (e.g., `fact="This project uses Cursor rules; I must apply references/cursor-mappings.md"` or `fact="This workspace has been scanned and is Gemini native"`), **BYPASS the scanning script entirely**. 
-- Immediately apply the mappings indicated in your memory.
+Before running any script or scanning file structures, inspect your active session and recalled memory for the **active skill currently being executed**:
+- If a persistent fact regarding this specific skill's signature already exists (e.g., `fact="Skill 'azure-pr' is Gemini-native; no translation needed"` or `fact="Skill 'custom-mcp' is a foreign Claude MCP skill; translate using references/claude-mappings.md"`), **BYPASS the scanning entirely**. 
+- Immediately apply the cached mapping/isolation settings.
 
 ### 1. Agent Logic Detection (Cache Miss Flow)
-If NO scan record exists in your memory for this workspace, run the local pattern detection script to scan the codebase:
-```bash
-python3 ~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py "<workspace_path>"
-```
-Analyze the returned JSON report, determine if foreign configurations (Claude, Cursor, Copilot, Codex, Gemini CLI) are present, and immediately proceed to **Step 2**.
+If NO scan record exists in your memory for the active skill, analyze the skill's tool definitions, JSON/Zod schemas, or package parameters:
+- Look for non-Antigravity signatures (e.g., Claude MCP tool patterns, Cursor rules, or Copilot structures).
+- If foreign patterns are detected, immediately proceed to **Step 2** to delegate to the polyglot subagent.
+- If the skill is 100% native (conforming perfectly to Antigravity tool schemas), proceed directly to **Step 3** to flag it as clean in memory.
 
 ### 2. Isolated Subagent Delegation (Interception)
-If any foreign signatures are found, DO NOT load their massive mapping tables or rules into your main context. Instead:
-- Spin up the specialized **`@antigravity-polyglot`** subagent in the background:
-  ```json
-  {
-    "TypeName": "antigravity-polyglot",
-    "Prompt": "Translate the active foreign agent rules and tool schemas for this session context."
-  }
-  ```
-- The subagent will parse all rules, match them strictly to your active working targets, and return a **highly condensed 'Active Constraint Card'** (typically under 150 tokens) to the main orchestrator.
-- Ingest only this tiny Constraint Card into your session, keeping your main workspace context beautifully clean.
+If a foreign skill is detected, DO NOT load its heavy mapping tables or parameter schemas into your main context. Instead:
+- Spin up the specialized **`@antigravity-polyglot`** subagent in the background to translate the skill's tool calls and rules.
+- The subagent will parse the schemas, match them strictly to your active working targets, and return a **highly condensed 'Active Constraint Card'** (under 150 tokens) to the main orchestrator.
+- Ingest only this tiny Constraint Card into your session, keeping your main context window clean.
 
 ### 3. Global Memory Persistence (Cache Write)
-After receiving the Constraint Card from the subagent, write the findings to memory to cache them for all subsequent turns in this session:
-- **For Foreign Signatures:** `save_memory(scope="project", fact="This project uses [Platform] rules; I must apply mapping logic from references/[platform]-mappings.md.")`
-- **For Clean Workspace:** `save_memory(scope="project", fact="This project is clean and Gemini/Antigravity native; no foreign mapping is needed.")`
+After resolving the active skill's compatibility status in Step 1 or Step 2, immediately write the findings to memory to cache them globally for all subsequent runs of **that specific skill**:
+- **For Foreign Skills:** `save_memory(scope="global", fact="Skill '[SkillName]' is a foreign [Platform] skill; translate its tool calls using references/[platform]-mappings.md.")`
+- **For Native Skills:** `save_memory(scope="global", fact="Skill '[SkillName]' is Gemini-native; no translation needed.")`
+
 
 ---
 
