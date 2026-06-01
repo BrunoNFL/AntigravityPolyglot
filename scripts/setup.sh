@@ -151,7 +151,7 @@ do_install() {
             summary+=("${RED}❌ Global Subagent Files Failed to Copy${NC}")
         fi
         
-        # Register global pre-execution hook natively in hooks.json
+        # Register global pre-execution hook natively in hooks.json (SessionStart & PreToolUse)
         if python3 -c '
 import json, os, sys
 hooks_path = os.path.expanduser("~/.gemini/config/hooks.json")
@@ -165,15 +165,17 @@ try:
 except Exception:
     sys.exit(1)
 polyglot_hook = data.setdefault("antigravity-polyglot", {})
+
+# 1. Register PreToolUse hook
 pre_tool_use = polyglot_hook.setdefault("PreToolUse", [])
-hook_exists = False
+pre_tool_exists = False
 for entry in pre_tool_use:
     if entry.get("matcher") == "*":
         for hk in entry.get("hooks", []):
             if hk.get("type") == "command" and "detect_patterns.py" in hk.get("command", ""):
-                hook_exists = True
+                pre_tool_exists = True
                 break
-if not hook_exists:
+if not pre_tool_exists:
     new_hook = {
         "matcher": "*",
         "hooks": [
@@ -191,6 +193,20 @@ if not hook_exists:
             break
     if not appended:
         pre_tool_use.append(new_hook)
+
+# 2. Register SessionStart hook
+session_start = polyglot_hook.setdefault("SessionStart", [])
+session_exists = False
+for entry in session_start:
+    if entry.get("type") == "command" and "detect_patterns.py" in entry.get("command", ""):
+        session_exists = True
+        break
+if not session_exists:
+    session_start.append({
+        "type": "command",
+        "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
+    })
+
 try:
     os.makedirs(os.path.dirname(hooks_path), exist_ok=True)
     with open(hooks_path, "w", encoding="utf-8") as f:
