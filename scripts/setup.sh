@@ -8,7 +8,7 @@ BOLD='\033[1m'
 CYAN='\033[36m'
 GREEN='\033[32m'
 RED='\033[31m'
-YELLOW='\033[33'
+YELLOW='\033[33m'
 DIM='\033[2m'
 NC='\033[0m' # No Color
 HIDE_CURSOR='\033[?25l'
@@ -113,8 +113,9 @@ do_install() {
         summary+=("${YELLOW}➖ Integration already exists (Skipped)${NC}")
     fi
     
-    # 3. Binary Link (Global only)
+    # 3. Dynamic Hook Registration
     if [ "$SCOPE" == "user" ]; then
+        # Option B: Global CLI Hook registration
         if [ ! -f "$BIN_DEST" ]; then
             if [ -w "/usr/local/bin" ]; then
                 ln -sf "$(realpath "$0")" "$BIN_DEST"
@@ -125,6 +126,30 @@ do_install() {
         else
             summary+=("${YELLOW}➖ CLI Binary already linked (Skipped)${NC}")
         fi
+        
+        # Register global pre-execution hook
+        if gemini hooks register --event pre-execution --command "python3 $HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py \"\$PWD\"" > /dev/null 2>&1; then
+            summary+=("${GREEN}✅ Global Pre-Execution Hook Registered${NC}")
+        else
+            summary+=("${YELLOW}➖ Global Hook registration not supported (Skipped)${NC}")
+        fi
+    else
+        # Option C: Local Workspace Shell Hook Interceptor
+        LOCAL_HOOK_DIR="./.agents/hooks"
+        LOCAL_HOOK_FILE="$LOCAL_HOOK_DIR/pre-exec.sh"
+        mkdir -p "$LOCAL_HOOK_DIR"
+        
+        # Write workspace-scoped hook
+        cat << 'EOF' > "$LOCAL_HOOK_FILE"
+#!/bin/bash
+# AntigravityPolyglot: Workspace Pre-Execution Hook
+# Deterministically scans the active workspace for foreign agent rules before any tool run.
+if [ -f "$HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py" ]; then
+    python3 "$HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py" "$PWD"
+fi
+EOF
+        chmod +x "$LOCAL_HOOK_FILE"
+        summary+=("${GREEN}✅ Workspace Pre-Execution Hook Written to .agents/hooks/${NC}")
     fi
 
     clear
@@ -160,7 +185,7 @@ do_uninstall() {
         summary+=("${GREEN}✅ Linguistic Integration Removed${NC}")
     fi
     
-    # 4. Remove Binary (Global only)
+    # 4. Remove Binary & Hooks
     if [ "$SCOPE" == "user" ] || [ "$SCOPE" == "global" ]; then
         if [ -f "$BIN_DEST" ]; then
             if [ "$IS_BREW" = false ]; then
@@ -171,6 +196,23 @@ do_uninstall() {
             else
                 summary+=("${DIM}➖ Binary managed by Homebrew (Deferred)${NC}")
             fi
+        fi
+        
+        # Unregister global pre-execution hook
+        if gemini hooks unregister --event pre-execution > /dev/null 2>&1; then
+            summary+=("${GREEN}✅ Global Pre-Execution Hook Unregistered${NC}")
+        fi
+    else
+        # Remove workspace hook
+        LOCAL_HOOK_FILE="./.agents/hooks/pre-exec.sh"
+        if [ -f "$LOCAL_HOOK_FILE" ]; then
+            rm "$LOCAL_HOOK_FILE"
+            summary+=("${GREEN}✅ Workspace Pre-Execution Hook Removed${NC}")
+        fi
+        
+        # Remove local hook directory if empty
+        if [ -d "./.agents/hooks" ] && [ -z "$(ls -A ./.agents/hooks 2>/dev/null)" ]; then
+            rmdir "./.agents/hooks"
         fi
     fi
 
