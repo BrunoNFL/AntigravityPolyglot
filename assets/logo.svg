@@ -1,16 +1,16 @@
 <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
   <!-- Modern Squircle Background -->
-  <rect x="5" y="5" width="190" height="190" rx="60" fill="#121212" stroke="#4285F4" stroke-width="4"/>
+  <rect x="5" y="5" width="190" height="190" rx="60" fill="#121212" stroke="#6366F1" stroke-width="4"/>
   
   <defs>
-    <linearGradient id="gemini-grad-logo" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#34A853;stop-opacity:1" />
+    <linearGradient id="antigravity-grad-logo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
     </linearGradient>
   </defs>
 
-  <!-- Central "G" for Gemini -->
-  <path d="M100 60C77.9086 60 60 77.9086 60 100C60 122.091 77.9086 140 100 140C122.091 140 140 122.091 140 100H100V85H155C157 100 157 115 150 130C140 150 120 160 100 160C66.8629 160 40 133.137 40 100C40 66.8629 66.8629 40 100 40C125 40 145 53 155 72L142 80C135 68 120 60 100 60Z" fill="url(#gemini-grad-logo)"/>
+  <!-- Central "A" for Antigravity -->
+  <path d="M100 40 L160 160 L140 160 L125 130 L75 130 L60 160 L40 160 Z M100 70 L83 112 L117 112 Z" fill="url(#antigravity-grad-logo)"/>
   
   <!-- Connectivity Dots -->
   <circle cx="50" cy="50" r="8" fill="#5E5E5E"/> <!-- Cursor -->
@@ -19,8 +19,8 @@
   <circle cx="150" cy="150" r="8" fill="#10A37F"/> <!-- Codex -->
   
   <!-- Connecting Lines -->
-  <line x1="100" y1="100" x2="55" y2="55" stroke="#4285F4" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
-  <line x1="100" y1="100" x2="145" y2="55" stroke="#4285F4" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
-  <line x1="100" y1="100" x2="55" y2="145" stroke="#4285F4" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
-  <line x1="100" y1="100" x2="145" y2="145" stroke="#4285F4" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
+  <line x1="100" y1="100" x2="55" y2="55" stroke="#6366F1" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
+  <line x1="100" y1="100" x2="145" y2="55" stroke="#6366F1" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
+  <line x1="100" y1="100" x2="55" y2="145" stroke="#6366F1" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
+  <line x1="100" y1="100" x2="145" y2="145" stroke="#6366F1" stroke-width="2" stroke-dasharray="4 2" opacity="0.6"/>
 </svg>

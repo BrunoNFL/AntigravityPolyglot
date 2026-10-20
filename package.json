@@ -1,22 +1,25 @@
 {
-  "name": "gemini-polyglot",
+  "name": "antigravity-polyglot",
   "version": "1.2.0",
-  "description": "Compatibility layer for AI agents (Cursor, Claude, Copilot, Codex) in Gemini CLI.",
+  "description": "Compatibility layer for AI agents (Cursor, Claude, Copilot, Codex) in the Antigravity orchestration system.",
   "bin": {
-    "gemini-polyglot": "./scripts/setup.sh"
+    "antigravity-polyglot": "./scripts/setup.sh"
   },
   "files": [
-    "dist/gemini-polyglot.skill",
+    "dist/antigravity-polyglot.skill",
     "scripts/setup.sh",
     "scripts/claude_compat.sh",
     "scripts/local_context_sync.sh",
+    "scripts/detect_patterns.py",
     "references/",
+    "agents/",
     "SKILL.md"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "antigravity",
     "gemini",
     "cli",
     "adapter",
@@ -30,3 +33,4 @@
   "author": "Bruno Andrade",
   "license": "MIT"
 }
+

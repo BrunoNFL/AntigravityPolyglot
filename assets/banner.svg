@@ -6,18 +6,18 @@
       <stop offset="0%" style="stop-color:#1e1e1e;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#0a0a0a;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="gemini-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#34A853;stop-opacity:1" />
+    <linearGradient id="antigravity-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#A855F7;stop-opacity:1" />
     </linearGradient>
   </defs>
   <rect width="1000" height="400" rx="40" fill="url(#grad1)"/>
 
   <!-- Squircle Logo Container (Modern Squircle) -->
-  <rect x="100" y="100" width="200" height="200" rx="60" fill="#1A1A1A" stroke="#4285F4" stroke-width="4"/>
+  <rect x="100" y="100" width="200" height="200" rx="60" fill="#1A1A1A" stroke="#6366F1" stroke-width="4"/>
   
-  <!-- Central "G" for Gemini -->
-  <path d="M200 160C177.909 160 160 177.909 160 200C160 222.091 177.909 240 200 240C222.091 240 240 222.091 240 200H200V185H255C257 200 257 215 250 230C240 250 220 260 200 260C166.863 260 140 233.137 140 200C140 166.863 166.863 140 200 140C225 140 245 153 255 172L242 180C235 168 220 160 200 160Z" fill="url(#gemini-grad)"/>
+  <!-- Central "A" for Antigravity -->
+  <path d="M200 140 L260 260 L240 260 L225 230 L175 230 L160 260 L140 260 Z M200 170 L183 212 L217 212 Z" fill="url(#antigravity-grad)"/>
   
   <!-- Connectivity Dots -->
   <circle cx="150" cy="150" r="10" fill="#5E5E5E"/> <!-- Cursor -->
@@ -26,16 +26,16 @@
   <circle cx="250" cy="250" r="10" fill="#10A37F"/> <!-- Codex -->
   
   <!-- Connection Lines (Dashed) -->
-  <line x1="200" y1="200" x2="150" y2="150" stroke="#4285F4" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
-  <line x1="200" y1="200" x2="250" y2="150" stroke="#4285F4" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
-  <line x1="200" y1="200" x2="150" y2="250" stroke="#4285F4" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
-  <line x1="200" y1="200" x2="250" y2="250" stroke="#4285F4" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+  <line x1="200" y1="200" x2="150" y2="150" stroke="#6366F1" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+  <line x1="200" y1="200" x2="250" y2="150" stroke="#6366F1" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+  <line x1="200" y1="200" x2="150" y2="250" stroke="#6366F1" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
+  <line x1="200" y1="200" x2="250" y2="250" stroke="#6366F1" stroke-width="2" stroke-dasharray="6 4" opacity="0.6"/>
 
   <!-- Text Content -->
-  <text x="350" y="190" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">GeminiPolyglot</text>
+  <text x="350" y="190" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">AntigravityPolyglot</text>
   <text x="350" y="250" font-family="Arial, sans-serif" font-size="32" font-weight="normal" fill="#AAAAAA">One agent. Speaks every AI language.</text>
   
-  <!-- Gemini CLI Badge Style -->
-  <rect x="350" y="280" width="160" height="36" rx="18" fill="#4285F4" fill-opacity="0.2" stroke="#4285F4"/>
-  <text x="375" y="304" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#4285F4">GEMINI CLI</text>
+  <!-- Antigravity Badge Style -->
+  <rect x="350" y="280" width="180" height="36" rx="18" fill="#6366F1" fill-opacity="0.2" stroke="#6366F1"/>
+  <text x="370" y="304" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#6366F1">ANTIGRAVITY</text>
 </svg>
