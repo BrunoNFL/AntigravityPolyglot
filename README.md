@@ -1,6 +1,6 @@
 # 🌐 AntigravityPolyglot for Antigravity
 
-![AntigravityPolyglot Banner](./assets/banner.svg)
+![AntigravityPolyglot Banner](./assets/banner-ag.svg)
 
 **Antigravity now speaks Claude, Cursor, Copilot, Codex, and Gemini CLI fluently.** 🗣️ Stop translating your project rules by hand—AntigravityPolyglot is the ultimate linguistic bridge that makes Antigravity a true universal adapter in the AI engineering world.
 
