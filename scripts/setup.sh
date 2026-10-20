@@ -72,6 +72,9 @@ print_summary() {
 }
 
 exit_prompt() {
+    if [ -n "$NON_INTERACTIVE" ] || [ ! -t 0 ]; then
+        exit 0
+    fi
     echo -e "\n${CYAN}─────────────────────────────────────────────────────────────${NC}"
     echo -e "${BOLD}Press any key to exit AntigravityPolyglot Manager...${NC}"
     read -n 1 -s
@@ -117,9 +120,15 @@ do_install() {
 
     echo -e "${CYAN}🚀 Initializing installation ($SCOPE)...${NC}"
     
-    # 1. Install Skill
-    if echo "y" | gemini skills install "$SKILL_FILE" --scope "$SCOPE" > /dev/null 2>&1; then
-        summary+=("${GREEN}✅ Skill Package Installed${NC}")
+    # 1. Install Skill Package
+    SKILL_DEST="$HOME/.gemini/skills/antigravity-polyglot"
+    [ "$SCOPE" == "workspace" ] && SKILL_DEST="./.agents/skills/antigravity-polyglot"
+    mkdir -p "$SKILL_DEST"
+    
+    if unzip -o -q "$SKILL_FILE" -d "$SKILL_DEST" 2>/dev/null; then
+        summary+=("${GREEN}✅ Skill Package Installed ($SKILL_DEST)${NC}")
+    elif echo "y" | gemini skills install "$SKILL_FILE" --scope "$SCOPE" > /dev/null 2>&1; then
+        summary+=("${GREEN}✅ Skill Package Installed via gemini skills${NC}")
     else
         summary+=("${RED}❌ Skill Package Failed${NC}")
     fi
@@ -157,7 +166,7 @@ do_install() {
             summary+=("${RED}❌ Global Subagent Files Failed to Copy${NC}")
         fi
         
-        # Register global pre-execution hook natively in hooks.json (SessionStart & PreToolUse)
+        # Register global SessionStart & PreToolUse hooks natively in hooks.json
         if python3 -c '
 import json, os, sys
 hooks_path = os.path.expanduser("~/.gemini/config/hooks.json")
@@ -169,48 +178,48 @@ try:
     else:
         data = {}
 except Exception:
-    sys.exit(1)
+    data = {}
+
 polyglot_hook = data.setdefault("antigravity-polyglot", {})
 
-# 1. Register PreToolUse hook
+script_path = os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py")
+hook_command = "python3 " + script_path + " --hook"
+
+# 1. Register PreToolUse hook (for tool & skill evaluation and caching)
 pre_tool_use = polyglot_hook.setdefault("PreToolUse", [])
 pre_tool_exists = False
 for entry in pre_tool_use:
     if entry.get("matcher") == "*":
         for hk in entry.get("hooks", []):
             if hk.get("type") == "command" and "detect_patterns.py" in hk.get("command", ""):
+                hk["command"] = hook_command
                 pre_tool_exists = True
                 break
 if not pre_tool_exists:
-    new_hook = {
-        "matcher": "*",
-        "hooks": [
-            {
-                "type": "command",
-                "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
-            }
-        ]
-    }
-    appended = False
-    for entry in pre_tool_use:
-        if entry.get("matcher") == "*":
-            entry.setdefault("hooks", []).append(new_hook["hooks"][0])
-            appended = True
-            break
-    if not appended:
-        pre_tool_use.append(new_hook)
+    polyglot_hook["PreToolUse"] = [
+        {
+            "matcher": "*",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": hook_command
+                }
+            ]
+        }
+    ]
 
 # 2. Register SessionStart hook
 session_start = polyglot_hook.setdefault("SessionStart", [])
 session_exists = False
 for entry in session_start:
     if entry.get("type") == "command" and "detect_patterns.py" in entry.get("command", ""):
+        entry["command"] = hook_command
         session_exists = True
         break
 if not session_exists:
     session_start.append({
         "type": "command",
-        "command": "python3 " + os.path.expanduser("~/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py") + " \"$PWD\""
+        "command": hook_command
     })
 
 try:
@@ -220,27 +229,85 @@ try:
 except Exception:
     sys.exit(1)
 ' > /dev/null 2>&1; then
-            summary+=("${GREEN}✅ Global Pre-Execution Hook Registered${NC}")
+            summary+=("${GREEN}✅ Global Hooks Registered (SessionStart & PreToolUse with Caching)${NC}")
         else
             summary+=("${RED}❌ Global Hook registration failed${NC}")
         fi
     else
-        # Option C: Local Workspace Shell Hook Interceptor & Workspace Subagent
-        LOCAL_HOOK_DIR="./.agents/hooks"
-        LOCAL_HOOK_FILE="$LOCAL_HOOK_DIR/pre-exec.sh"
-        mkdir -p "$LOCAL_HOOK_DIR"
+        # Option C: Local Workspace Hook Interceptor & Workspace Subagent
+        mkdir -p "./.agents"
         
-        # Write workspace-scoped hook
-        cat << 'EOF' > "$LOCAL_HOOK_FILE"
-#!/bin/bash
-# AntigravityPolyglot: Workspace Pre-Execution Hook
-# Deterministically scans the active workspace for foreign agent rules before any tool run.
-if [ -f "$HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py" ]; then
-    python3 "$HOME/.gemini/skills/antigravity-polyglot/scripts/detect_patterns.py" "$PWD"
-fi
-EOF
-        chmod +x "$LOCAL_HOOK_FILE"
-        summary+=("${GREEN}✅ Workspace Pre-Execution Hook Written to .agents/hooks/${NC}")
+        # Write workspace-scoped hooks.json
+        if python3 -c '
+import json, os, sys
+hooks_path = os.path.abspath("./.agents/hooks.json")
+try:
+    if os.path.exists(hooks_path):
+        with open(hooks_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            data = json.loads(content) if content else {}
+    else:
+        data = {}
+except Exception:
+    data = {}
+
+polyglot_hook = data.setdefault("antigravity-polyglot", {})
+
+script_path = "./.agents/skills/antigravity-polyglot/scripts/detect_patterns.py"
+hook_command = "python3 " + script_path + " --hook"
+
+# 1. Register PreToolUse hook
+pre_tool_use = polyglot_hook.setdefault("PreToolUse", [])
+pre_tool_exists = False
+for entry in pre_tool_use:
+    if entry.get("matcher") == "*":
+        for hk in entry.get("hooks", []):
+            if hk.get("type") == "command" and "detect_patterns.py" in hk.get("command", ""):
+                hk["command"] = hook_command
+                pre_tool_exists = True
+                break
+if not pre_tool_exists:
+    polyglot_hook["PreToolUse"] = [
+        {
+            "matcher": "*",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": hook_command
+                }
+            ]
+        }
+    ]
+
+# 2. Register SessionStart hook
+session_start = polyglot_hook.setdefault("SessionStart", [])
+session_exists = False
+for entry in session_start:
+    if entry.get("type") == "command" and "detect_patterns.py" in entry.get("command", ""):
+        entry["command"] = hook_command
+        session_exists = True
+        break
+if not session_exists:
+    session_start.append({
+        "type": "command",
+        "command": hook_command
+    })
+
+try:
+    os.makedirs(os.path.dirname(hooks_path), exist_ok=True)
+    with open(hooks_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+except Exception:
+    sys.exit(1)
+' > /dev/null 2>&1; then
+            summary+=("${GREEN}✅ Workspace Hooks Registered in .agents/hooks.json${NC}")
+        else
+            summary+=("${RED}❌ Workspace Hook registration failed${NC}")
+        fi
+        
+        # Clean up legacy pre-exec.sh if present
+        rm -f "./.agents/hooks/pre-exec.sh" 2>/dev/null
+        [ -d "./.agents/hooks" ] && [ -z "$(ls -A ./.agents/hooks 2>/dev/null)" ] && rmdir "./.agents/hooks" 2>/dev/null
         
         # Scaffold workspace subagent by copying templates
         if write_subagent_files "./.agents/agents/antigravity-polyglot"; then
@@ -268,11 +335,22 @@ do_uninstall() {
         IS_BREW=true
     fi
 
-    # 2. Uninstall Skill
-    if echo "y" | gemini skills uninstall antigravity-polyglot --scope "$SCOPE" > /dev/null 2>&1; then
-        summary+=("${GREEN}✅ Skill Package Removed${NC}")
+    # 2. Uninstall Skill Package
+    SKILL_DEST="$HOME/.gemini/skills/antigravity-polyglot"
+    [ "$SCOPE" == "workspace" ] && SKILL_DEST="./.agents/skills/antigravity-polyglot"
+    if [ -d "$SKILL_DEST" ]; then
+        rm -rf "$SKILL_DEST"
+        summary+=("${GREEN}✅ Skill Package Removed ($SKILL_DEST)${NC}")
+    elif echo "y" | gemini skills uninstall antigravity-polyglot --scope "$SCOPE" > /dev/null 2>&1; then
+        summary+=("${GREEN}✅ Skill Package Removed via gemini skills${NC}")
     else
         summary+=("${YELLOW}➖ Skill not found (Skipped)${NC}")
+    fi
+    
+    # Also clean up legacy .disabled directories if present
+    if [ "$SCOPE" == "user" ] || [ "$SCOPE" == "global" ]; then
+        [ -d "$HOME/.gemini/skills/antigravity-polyglot.disabled" ] && rm -rf "$HOME/.gemini/skills/antigravity-polyglot.disabled"
+        [ -d "$HOME/.gemini/agents/antigravity-polyglot.disabled" ] && rm -rf "$HOME/.gemini/agents/antigravity-polyglot.disabled"
     fi
     
     # 3. Remove Integration
@@ -317,17 +395,40 @@ except Exception:
 if "antigravity-polyglot" in data:
     del data["antigravity-polyglot"]
 try:
-    with open(hooks_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    if data:
+        with open(hooks_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    else:
+        os.remove(hooks_path)
 except Exception:
     sys.exit(1)
 ' > /dev/null 2>&1; then
-            summary+=("${GREEN}✅ Global Pre-Execution Hook Unregistered${NC}")
+            summary+=("${GREEN}✅ Global SessionStart Hook Unregistered from hooks.json${NC}")
         else
             summary+=("${RED}❌ Global Hook unregistration failed${NC}")
         fi
     else
-        # Remove workspace hook
+        # Remove workspace hook from .agents/hooks.json
+        python3 -c '
+import json, os, sys
+hooks_path = os.path.abspath("./.agents/hooks.json")
+if os.path.exists(hooks_path):
+    try:
+        with open(hooks_path, "r", encoding="utf-8") as f:
+            content = f.read().strip()
+            data = json.loads(content) if content else {}
+        if "antigravity-polyglot" in data:
+            del data["antigravity-polyglot"]
+        if data:
+            with open(hooks_path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        else:
+            os.remove(hooks_path)
+    except Exception:
+        sys.exit(1)
+' > /dev/null 2>&1
+        summary+=("${GREEN}✅ Workspace Hook Unregistered from .agents/hooks.json${NC}")
+
         LOCAL_HOOK_FILE="./.agents/hooks/pre-exec.sh"
         if [ -f "$LOCAL_HOOK_FILE" ]; then
             rm "$LOCAL_HOOK_FILE"
@@ -420,6 +521,7 @@ select_option() {
 # --- Main Entry Point ---
 
 if [ "$1" != "" ]; then
+    NON_INTERACTIVE=true
     case "$1" in
         "--install-global") do_install "user" ;;
         "--uninstall-global") do_uninstall "user" ;;
@@ -443,8 +545,8 @@ while true; do
             ;;
         1) # Uninstall Detection
             IS_GLOBAL=false; IS_WORKSPACE=false
-            gemini skills list 2>/dev/null | grep -q "antigravity-polyglot" && [ -f "$GLOBAL_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$GLOBAL_GEMINI_MD" && IS_GLOBAL=true
-            [ -f "$WORKSPACE_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$WORKSPACE_GEMINI_MD" && IS_WORKSPACE=true
+            ([ -d "$HOME/.gemini/skills/antigravity-polyglot" ] || [ -d "$HOME/.gemini/skills/antigravity-polyglot.disabled" ] || gemini skills list 2>/dev/null | grep -q "antigravity-polyglot") && [ -f "$GLOBAL_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$GLOBAL_GEMINI_MD" && IS_GLOBAL=true
+            ([ -d "./.agents/skills/antigravity-polyglot" ] || ( [ -f "$WORKSPACE_GEMINI_MD" ] && grep -q "$INTEGRATION_MARKER" "$WORKSPACE_GEMINI_MD" )) && IS_WORKSPACE=true
             
             if [ "$IS_GLOBAL" = true ] && [ "$IS_WORKSPACE" = true ]; then
                 select_option "Multiple installations found:" "Uninstall Global" "Uninstall Workspace" "Both" "Back"
